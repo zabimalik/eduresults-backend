@@ -9,35 +9,48 @@ import {
   getResultsByClass,
   getResultsBySubject,
   getResultStats,
+  bulkCreateResults,
+  getStudentResultSummary,
 } from "../controllers/resultController.js";
+import { 
+  validateResultInput, 
+  validateResultUpdate, 
+  validateObjectId 
+} from "../middleware/validation.js";
 
 const router = express.Router();
 
 // @route   GET /api/results/stats
 router.get("/stats", getResultStats);
 
+// @route   POST /api/results/bulk
+router.post("/bulk", bulkCreateResults);
+
+// @route   GET /api/results/student/:studentId/summary
+router.get("/student/:studentId/summary", validateObjectId('studentId'), getStudentResultSummary);
+
 // @route   GET /api/results/student/:studentId
-router.get("/student/:studentId", getResultsByStudent);
+router.get("/student/:studentId", validateObjectId('studentId'), getResultsByStudent);
 
 // @route   GET /api/results/class/:classId
-router.get("/class/:classId", getResultsByClass);
+router.get("/class/:classId", validateObjectId('classId'), getResultsByClass);
 
 // @route   GET /api/results/subject/:subjectId
-router.get("/subject/:subjectId", getResultsBySubject);
+router.get("/subject/:subjectId", validateObjectId('subjectId'), getResultsBySubject);
 
 // @route   GET /api/results
 router.get("/", getResults);
 
 // @route   GET /api/results/:id
-router.get("/:id", getResult);
+router.get("/:id", validateObjectId('id'), getResult);
 
 // @route   POST /api/results
-router.post("/", createResult);
+router.post("/", validateResultInput, createResult);
 
 // @route   PUT /api/results/:id
-router.put("/:id", updateResult);
+router.put("/:id", validateObjectId('id'), validateResultUpdate, updateResult);
 
 // @route   DELETE /api/results/:id
-router.delete("/:id", deleteResult);
+router.delete("/:id", validateObjectId('id'), deleteResult);
 
 export default router;

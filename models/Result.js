@@ -35,8 +35,8 @@ const resultSchema = new mongoose.Schema({
   examType: {
     type: String,
     required: [true, "Exam type is required"],
-    enum: ["Final", "Midterm", "Unit Test"],
-    default: "Final",
+    enum: ["Final Term", "Mid Term", "Monthly Test"],
+    default: "Final Term",
   },
   percentage: {
     type: Number,
@@ -50,9 +50,10 @@ const resultSchema = new mongoose.Schema({
       const percentage = (this.marks / this.maxMarks) * 100;
       if (percentage >= 90) return 'A+';
       if (percentage >= 80) return 'A';
-      if (percentage >= 70) return 'B';
-      if (percentage >= 60) return 'C';
-      if (percentage >= 50) return 'D';
+      if (percentage >= 70) return 'B+';
+      if (percentage >= 60) return 'B';
+      if (percentage >= 50) return 'C';
+      if (percentage >= 40) return 'D';
       return 'F';
     }
   },
@@ -109,13 +110,14 @@ resultSchema.set('toObject', { virtuals: true });
 // Pre-save middleware to calculate percentage and grade
 resultSchema.pre('save', function() {
   if (this.marks !== undefined && this.maxMarks !== undefined) {
-    this.percentage = (this.marks / this.maxMarks) * 100;
+    this.percentage = Math.round((this.marks / this.maxMarks) * 100 * 100) / 100;
     
     if (this.percentage >= 90) this.grade = 'A+';
     else if (this.percentage >= 80) this.grade = 'A';
-    else if (this.percentage >= 70) this.grade = 'B';
-    else if (this.percentage >= 60) this.grade = 'C';
-    else if (this.percentage >= 50) this.grade = 'D';
+    else if (this.percentage >= 70) this.grade = 'B+';
+    else if (this.percentage >= 60) this.grade = 'B';
+    else if (this.percentage >= 50) this.grade = 'C';
+    else if (this.percentage >= 40) this.grade = 'D';
     else this.grade = 'F';
   }
   

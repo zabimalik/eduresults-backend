@@ -3,6 +3,7 @@ import {
   getCombinations,
   getCombination,
   createCombination,
+  createBulkCombinations,
   updateCombination,
   toggleCombination,
   deleteCombination,
@@ -23,6 +24,9 @@ router.get("/subject/:subjectId", getCombinationsBySubject);
 
 // @route   GET /api/combinations/:id
 router.get("/:id", getCombination);
+
+// @route   POST /api/combinations/bulk
+router.post("/bulk", createBulkCombinations);
 
 // @route   POST /api/combinations
 router.post("/", createCombination);

@@ -121,6 +121,86 @@ export const createCombination = async (req, res) => {
   }
 };
 
+// @desc    Create multiple combinations for a class
+// @route   POST /api/combinations/bulk
+// @access  Public
+export const createBulkCombinations = async (req, res) => {
+  try {
+    const { classId, subjectIds, isActive = true } = req.body;
+
+    // Validate input
+    if (!classId || !Array.isArray(subjectIds) || subjectIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Class ID and at least one subject ID are required",
+      });
+    }
+
+    // Validate that class exists
+    const classExists = await Class.findById(classId);
+    if (!classExists) {
+      return res.status(400).json({
+        success: false,
+        message: "Class not found",
+      });
+    }
+
+    // Validate that all subjects exist
+    const subjects = await Subject.find({ _id: { $in: subjectIds } });
+    if (subjects.length !== subjectIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: "One or more subjects not found",
+      });
+    }
+
+    // Check for existing combinations
+    const existingCombinations = await Combination.find({
+      classId,
+      subjectId: { $in: subjectIds },
+    });
+
+    const existingSubjectIds = existingCombinations.map(c => c.subjectId.toString());
+    const newSubjectIds = subjectIds.filter(id => !existingSubjectIds.includes(id.toString()));
+
+    // Create new combinations
+    const newCombinations = [];
+    if (newSubjectIds.length > 0) {
+      const combinationsToCreate = newSubjectIds.map(subjectId => ({
+        classId,
+        subjectId,
+        isActive,
+      }));
+
+      const created = await Combination.insertMany(combinationsToCreate);
+
+      // Populate the created combinations
+      for (const combination of created) {
+        const populated = await Combination.findById(combination._id)
+          .populate('classId', 'name section')
+          .populate('subjectId', 'name code');
+        newCombinations.push(populated);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `${newCombinations.length} combination(s) created successfully${existingCombinations.length > 0 ? `, ${existingCombinations.length} skipped (already exist)` : ''}`,
+      data: {
+        created: newCombinations,
+        skipped: existingCombinations.length,
+        total: subjectIds.length,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Update combination
 // @route   PUT /api/combinations/:id
 // @access  Public
@@ -151,12 +231,12 @@ export const updateCombination = async (req, res) => {
 
     // If both classId and subjectId are provided, check for duplicates
     if (classId && subjectId) {
-      const existingCombination = await Combination.findOne({ 
-        classId, 
-        subjectId, 
-        _id: { $ne: req.params.id } 
+      const existingCombination = await Combination.findOne({
+        classId,
+        subjectId,
+        _id: { $ne: req.params.id }
       });
-      
+
       if (existingCombination) {
         return res.status(400).json({
           success: false,
@@ -173,7 +253,7 @@ export const updateCombination = async (req, res) => {
         runValidators: true,
       }
     ).populate('classId', 'name section')
-     .populate('subjectId', 'name code');
+      .populate('subjectId', 'name code');
 
     if (!combination) {
       return res.status(404).json({

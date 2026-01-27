@@ -8,18 +8,21 @@ import combinationRoutes from "./routes/combinationRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
 import noticeRoutes from "./routes/noticeRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import { seedAdmin } from "./controllers/authController.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 
 dotenv.config();
 connectDB();
+seedAdmin();
 
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'development' 
-    ? ['http://localhost:5173', 'https://eduresults-hub-tawny.vercel.app','https://eduresults-hub-tawny.vercel.app/', 'http://localhost:3000', 'http://localhost:4173', 'http://127.0.0.1:5173', 'http://localhost:8080', 'http://127.0.0.1:8080']
+  origin: process.env.NODE_ENV === 'development'
+    ? ['http://localhost:5173', 'https://eduresults-hub-tawny.vercel.app', 'https://eduresults-hub-tawny.vercel.app/', 'http://localhost:3000', 'http://localhost:4173', 'http://127.0.0.1:5173', 'http://localhost:8080', 'http://127.0.0.1:8080']
     : process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -40,6 +43,7 @@ app.use("/api/combinations", combinationRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/results", resultRoutes);
 app.use("/api/notices", noticeRoutes);
+app.use("/api/auth", authRoutes);
 
 // Health check route
 app.get("/api/health", (req, res) => {
@@ -60,7 +64,7 @@ app.get("/api", (req, res) => {
     version: "1.0.0",
     endpoints: {
       classes: "/api/classes",
-      subjects: "/api/subjects", 
+      subjects: "/api/subjects",
       combinations: "/api/combinations",
       students: "/api/students",
       results: "/api/results",

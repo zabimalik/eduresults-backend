@@ -11,6 +11,11 @@ const combinationSchema = new mongoose.Schema({
     ref: "Subject",
     required: [true, "Subject ID is required"],
   },
+  subjectCode: {
+    type: String,
+    required: [true, "Subject code is required"],
+    index: true,
+  },
   isActive: {
     type: Boolean,
     default: true,

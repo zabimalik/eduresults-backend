@@ -22,6 +22,13 @@ const resultSchema = new mongoose.Schema({
     ref: "Subject",
     required: [true, "Subject ID is required"],
   },
+  subjectCode: {
+    type: String,
+    required: [true, "Subject code is required"],
+    trim: true,
+    uppercase: true,
+    index: true,
+  },
   marks: {
     type: Number,
     required: [true, "Marks are required"],
@@ -40,13 +47,13 @@ const resultSchema = new mongoose.Schema({
   },
   percentage: {
     type: Number,
-    default: function() {
+    default: function () {
       return (this.marks / this.maxMarks) * 100;
     }
   },
   grade: {
     type: String,
-    default: function() {
+    default: function () {
       const percentage = (this.marks / this.maxMarks) * 100;
       if (percentage >= 90) return 'A+';
       if (percentage >= 80) return 'A';
@@ -60,7 +67,7 @@ const resultSchema = new mongoose.Schema({
   academicYear: {
     type: String,
     required: [true, "Academic year is required"],
-    default: function() {
+    default: function () {
       const currentYear = new Date().getFullYear();
       return `${currentYear}-${currentYear + 1}`;
     }
@@ -70,11 +77,11 @@ const resultSchema = new mongoose.Schema({
 });
 
 // Create compound indexes for better performance and uniqueness
-resultSchema.index({ 
-  studentId: 1, 
-  subjectId: 1, 
-  examType: 1, 
-  academicYear: 1 
+resultSchema.index({
+  studentId: 1,
+  subjectId: 1,
+  examType: 1,
+  academicYear: 1
 }, { unique: true });
 
 resultSchema.index({ classId: 1 });
@@ -108,10 +115,10 @@ resultSchema.set('toJSON', { virtuals: true });
 resultSchema.set('toObject', { virtuals: true });
 
 // Pre-save middleware to calculate percentage and grade
-resultSchema.pre('save', function() {
+resultSchema.pre('save', function () {
   if (this.marks !== undefined && this.maxMarks !== undefined) {
     this.percentage = Math.round((this.marks / this.maxMarks) * 100 * 100) / 100;
-    
+
     if (this.percentage >= 90) this.grade = 'A+';
     else if (this.percentage >= 80) this.grade = 'A';
     else if (this.percentage >= 70) this.grade = 'B+';
@@ -120,7 +127,7 @@ resultSchema.pre('save', function() {
     else if (this.percentage >= 40) this.grade = 'D';
     else this.grade = 'F';
   }
-  
+
   if (!this.academicYear) {
     const currentYear = new Date().getFullYear();
     this.academicYear = `${currentYear}-${currentYear + 1}`;

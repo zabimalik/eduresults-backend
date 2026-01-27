@@ -26,7 +26,7 @@ const validateMarks = (marks, maxMarks) => {
 // Helper function to build search filter
 const buildSearchFilter = (search) => {
   if (!search) return {};
-  
+
   return {
     $or: [
       { rollId: { $regex: search, $options: 'i' } },
@@ -40,19 +40,19 @@ const buildSearchFilter = (search) => {
 // @access  Public
 export const getResults = async (req, res) => {
   try {
-    const { 
-      studentId, 
-      classId, 
-      subjectId, 
-      examType, 
-      academicYear, 
+    const {
+      studentId,
+      classId,
+      subjectId,
+      examType,
+      academicYear,
       search,
       page = 1,
       limit = 100,
       sortBy = 'createdAt',
       sortOrder = 'desc'
     } = req.query;
-    
+
     // Build filter object
     const filter = {};
     if (studentId) filter.studentId = studentId;
@@ -60,7 +60,7 @@ export const getResults = async (req, res) => {
     if (subjectId) filter.subjectId = subjectId;
     if (examType) filter.examType = examType;
     if (academicYear) filter.academicYear = academicYear;
-    
+
     // Add search functionality
     if (search) {
       filter.$or = [
@@ -137,15 +137,15 @@ export const getResult = async (req, res) => {
 // @access  Public
 export const createResult = async (req, res) => {
   try {
-    const { 
-      studentId, 
-      rollId, 
-      classId, 
-      subjectId, 
-      marks, 
-      maxMarks, 
-      examType, 
-      academicYear 
+    const {
+      studentId,
+      rollId,
+      classId,
+      subjectId,
+      marks,
+      maxMarks,
+      examType,
+      academicYear
     } = req.body;
 
     // Input validation
@@ -265,6 +265,7 @@ export const createResult = async (req, res) => {
       rollId: rollId.toUpperCase(),
       classId,
       subjectId,
+      subjectCode: subject.code,
       marks: parseFloat(marks),
       maxMarks: parseFloat(maxMarks),
       examType,
@@ -284,7 +285,7 @@ export const createResult = async (req, res) => {
     });
   } catch (error) {
     console.error('Create Result Error:', error);
-    
+
     if (error.code === 11000) {
       // Handle duplicate key error
       const duplicateField = Object.keys(error.keyPattern)[0];
@@ -315,11 +316,11 @@ export const createResult = async (req, res) => {
 // @access  Public
 export const updateResult = async (req, res) => {
   try {
-    const { 
-      marks, 
-      maxMarks, 
-      examType, 
-      academicYear 
+    const {
+      marks,
+      maxMarks,
+      examType,
+      academicYear
     } = req.body;
 
     // Find the existing result
@@ -335,7 +336,7 @@ export const updateResult = async (req, res) => {
     if (marks !== undefined || maxMarks !== undefined) {
       const newMarks = marks !== undefined ? parseFloat(marks) : existingResult.marks;
       const newMaxMarks = maxMarks !== undefined ? parseFloat(maxMarks) : existingResult.maxMarks;
-      
+
       const marksError = validateMarks(newMarks, newMaxMarks);
       if (marksError) {
         return res.status(400).json({
@@ -356,7 +357,7 @@ export const updateResult = async (req, res) => {
     if (examType || academicYear) {
       const newExamType = examType || existingResult.examType;
       const newAcademicYear = academicYear || existingResult.academicYear;
-      
+
       const duplicateResult = await Result.findOne({
         _id: { $ne: req.params.id }, // Exclude current result
         studentId: existingResult.studentId,
@@ -392,7 +393,7 @@ export const updateResult = async (req, res) => {
     });
   } catch (error) {
     console.error('Update Result Error:', error);
-    
+
     if (error.code === 11000) {
       res.status(409).json({
         success: false,
@@ -451,7 +452,7 @@ export const getResultsByStudent = async (req, res) => {
   try {
     const { academicYear, examType } = req.query;
     const filter = { studentId: req.params.studentId };
-    
+
     if (academicYear) filter.academicYear = academicYear;
     if (examType) filter.examType = examType;
 
@@ -482,7 +483,7 @@ export const getResultsByClass = async (req, res) => {
   try {
     const { academicYear, examType, subjectId } = req.query;
     const filter = { classId: req.params.classId };
-    
+
     if (academicYear) filter.academicYear = academicYear;
     if (examType) filter.examType = examType;
     if (subjectId) filter.subjectId = subjectId;
@@ -514,7 +515,7 @@ export const getResultsBySubject = async (req, res) => {
   try {
     const { academicYear, examType, classId } = req.query;
     const filter = { subjectId: req.params.subjectId };
-    
+
     if (academicYear) filter.academicYear = academicYear;
     if (examType) filter.examType = examType;
     if (classId) filter.classId = classId;
@@ -546,14 +547,14 @@ export const getResultStats = async (req, res) => {
   try {
     const { academicYear, classId, subjectId, examType } = req.query;
     const filter = {};
-    
+
     if (academicYear) filter.academicYear = academicYear;
     if (classId) filter.classId = classId;
     if (subjectId) filter.subjectId = subjectId;
     if (examType) filter.examType = examType;
 
     const totalResults = await Result.countDocuments(filter);
-    
+
     if (totalResults === 0) {
       return res.status(200).json({
         success: true,
@@ -631,7 +632,7 @@ export const getResultStats = async (req, res) => {
           }
         }
       },
-      { 
+      {
         $addFields: {
           passRate: { $multiply: [{ $divide: ["$passCount", "$count"] }, 100] }
         }
@@ -665,7 +666,7 @@ export const getResultStats = async (req, res) => {
           grades: { $push: "$grade" }
         }
       },
-      { 
+      {
         $addFields: {
           overallPercentage: { $multiply: [{ $divide: ["$totalMarks", "$totalMaxMarks"] }, 100] }
         }
@@ -767,7 +768,7 @@ export const bulkCreateResults = async (req, res) => {
     for (let i = 0; i < results.length; i++) {
       try {
         const resultData = results[i];
-        
+
         // Validate required fields
         if (!resultData.studentId || !resultData.subjectId || resultData.marks === undefined) {
           errors.push({
@@ -777,13 +778,21 @@ export const bulkCreateResults = async (req, res) => {
           continue;
         }
 
+        // Fetch subject to get code if not provided
+        if (!resultData.subjectCode) {
+          const subject = await Subject.findById(resultData.subjectId);
+          if (subject) {
+            resultData.subjectCode = subject.code;
+          }
+        }
+
         // Create the result
         const result = await Result.create(resultData);
         const populatedResult = await Result.findById(result._id)
           .populate('studentId', 'name rollId')
           .populate('classId', 'name section')
           .populate('subjectId', 'name code');
-        
+
         createdResults.push(populatedResult);
       } catch (error) {
         errors.push({
@@ -915,3 +924,71 @@ export const getStudentResultSummary = async (req, res) => {
     });
   }
 };
+
+// @desc    Delete all results
+// @route   DELETE /api/results/all/delete
+// @access  Public (Should be protected in production)
+export const deleteAllResults = async (req, res) => {
+  try {
+    const count = await Result.countDocuments();
+
+    if (count === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No results to delete",
+        count: 0
+      });
+    }
+
+    await Result.deleteMany({});
+
+    console.log(`🧨 ALL RESULTS DELETED. Total records removed: ${count}`);
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully deleted all ${count} results`,
+      count
+    });
+  } catch (error) {
+    console.error('Delete All Results Error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete results",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Delete bulk results by IDs
+// @route   POST /api/results/bulk-delete
+// @access  Public
+export const deleteBulkResults = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide an array of result IDs to delete",
+      });
+    }
+
+    const result = await Result.deleteMany({ _id: { $in: ids } });
+
+    console.log(`🗑️ Bulk delete completed. Removed ${result.deletedCount} results.`);
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} results`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Bulk Delete Results Error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete results",
+      error: error.message,
+    });
+  }
+};
+

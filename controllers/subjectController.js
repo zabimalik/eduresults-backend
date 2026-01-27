@@ -106,11 +106,11 @@ export const updateSubject = async (req, res) => {
     const { name, code } = req.body;
 
     // Check if another subject with same code exists (excluding current subject)
-    const existingSubject = await Subject.findOne({ 
-      code: code.toUpperCase(), 
-      _id: { $ne: req.params.id } 
+    const existingSubject = await Subject.findOne({
+      code: code.toUpperCase(),
+      _id: { $ne: req.params.id }
     });
-    
+
     if (existingSubject) {
       return res.status(400).json({
         success: false,
@@ -155,7 +155,7 @@ export const updateSubject = async (req, res) => {
   }
 };
 
-// @desc    Delete subject
+// @desc    Delete subject with cascading delete
 // @route   DELETE /api/subjects/:id
 // @access  Public
 export const deleteSubject = async (req, res) => {
@@ -169,16 +169,49 @@ export const deleteSubject = async (req, res) => {
       });
     }
 
+    // Store subject code for cascading delete
+    const subjectCode = subject.code;
+    const subjectName = subject.name;
+
+    console.log(`🗑️ Deleting subject: ${subjectName} (${subjectCode})`);
+
+    // Import models for cascading delete
+    const Combination = (await import("../models/Combination.js")).default;
+    const Result = (await import("../models/Result.js")).default;
+
+    // Count related records before deletion
+    const combinationsCount = await Combination.countDocuments({ subjectCode });
+    const resultsCount = await Result.countDocuments({ subjectCode });
+
+    console.log(`📊 Found ${combinationsCount} combinations and ${resultsCount} results to delete`);
+
+    // Delete all combinations with this subject code
+    const deletedCombinations = await Combination.deleteMany({ subjectCode });
+    console.log(`✅ Deleted ${deletedCombinations.deletedCount} combinations`);
+
+    // Delete all results with this subject code
+    const deletedResults = await Result.deleteMany({ subjectCode });
+    console.log(`✅ Deleted ${deletedResults.deletedCount} results`);
+
+    // Finally, delete the subject itself
     await Subject.findByIdAndDelete(req.params.id);
+    console.log(`✅ Deleted subject: ${subjectName}`);
 
     res.status(200).json({
       success: true,
-      message: "Subject deleted successfully",
+      message: `Subject "${subjectName}" deleted successfully`,
+      deletedRecords: {
+        subject: 1,
+        combinations: deletedCombinations.deletedCount,
+        results: deletedResults.deletedCount,
+        total: 1 + deletedCombinations.deletedCount + deletedResults.deletedCount
+      }
     });
   } catch (error) {
+    console.error('❌ Delete Subject Error:', error);
     res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: "Failed to delete subject",
       error: error.message,
     });
   }

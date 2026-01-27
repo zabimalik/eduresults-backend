@@ -92,6 +92,7 @@ export const createCombination = async (req, res) => {
     const combination = await Combination.create({
       classId,
       subjectId,
+      subjectCode: subjectExists.code,
       isActive,
     });
 
@@ -166,11 +167,15 @@ export const createBulkCombinations = async (req, res) => {
     // Create new combinations
     const newCombinations = [];
     if (newSubjectIds.length > 0) {
-      const combinationsToCreate = newSubjectIds.map(subjectId => ({
-        classId,
-        subjectId,
-        isActive,
-      }));
+      const combinationsToCreate = newSubjectIds.map(subjectId => {
+        const subject = subjects.find(s => s._id.toString() === subjectId.toString());
+        return {
+          classId,
+          subjectId,
+          subjectCode: subject.code,
+          isActive,
+        };
+      });
 
       const created = await Combination.insertMany(combinationsToCreate);
 
@@ -245,9 +250,19 @@ export const updateCombination = async (req, res) => {
       }
     }
 
+    // Prepare update data
+    const updateData = { isActive };
+    if (classId) updateData.classId = classId;
+    if (subjectId) {
+      updateData.subjectId = subjectId;
+      // Fetch the subject to get its code
+      const subject = await Subject.findById(subjectId);
+      updateData.subjectCode = subject.code;
+    }
+
     const combination = await Combination.findByIdAndUpdate(
       req.params.id,
-      { classId, subjectId, isActive },
+      updateData,
       {
         new: true,
         runValidators: true,

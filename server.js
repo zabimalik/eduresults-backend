@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 import connectDB from "./config/db.js";
 import classRoutes from "./routes/classRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
@@ -8,8 +9,6 @@ import combinationRoutes from "./routes/combinationRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
 import noticeRoutes from "./routes/noticeRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
-import { seedAdmin } from "./controllers/authController.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 
@@ -62,7 +61,6 @@ app.use("/api/combinations", combinationRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/results", resultRoutes);
 app.use("/api/notices", noticeRoutes);
-app.use("/api/auth", authRoutes);
 
 // Health check route
 app.get("/api/health", async (req, res) => {
@@ -86,7 +84,6 @@ app.get("/api/health", async (req, res) => {
       state: dbState
     },
     config: {
-      hasJwtSecret: !!process.env.JWT_SECRET,
       hasMongoUri: !!(process.env.MONGODB_URI || process.env.MONGO_URI),
       nodeEnv: process.env.NODE_ENV
     }
@@ -136,7 +133,6 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     await connectDB();
-    await seedAdmin();
 
     if (process.env.NODE_ENV !== 'test') {
       app.listen(PORT, () => {

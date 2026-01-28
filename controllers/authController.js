@@ -75,14 +75,22 @@ export const changePassword = async (req, res) => {
 // Seeding function to ensure at least one admin exists
 export const seedAdmin = async () => {
     try {
-        const adminCount = await Admin.countDocuments();
-        if (adminCount === 0) {
-            const defaultPassword = 'admin123';
+        const defaultUsername = 'admin';
+        const defaultPassword = 'admin123';
+
+        let admin = await Admin.findOne({ username: defaultUsername });
+
+        if (!admin) {
             await Admin.create({
-                username: 'admin',
+                username: defaultUsername,
                 password: defaultPassword,
             });
-            console.log('✅ Default admin account created (admin/admin123)');
+            console.log(`✅ Default admin account created (${defaultUsername}/${defaultPassword})`);
+        } else {
+            // Force reset password to admin123 to ensure user can login
+            admin.password = defaultPassword;
+            await admin.save();
+            console.log(`✅ Admin password reset to default (${defaultPassword})`);
         }
     } catch (error) {
         console.error('❌ Error seeding admin:', error);

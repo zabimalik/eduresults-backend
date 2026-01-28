@@ -17,7 +17,8 @@ export const authAdmin = async (req, res) => {
     try {
         const admin = await Admin.findOne({ username });
 
-        if (admin && (await admin.matchPassword(password))) {
+        // Use plain text comparison
+        if (admin && admin.password === password) {
             res.json({
                 success: true,
                 data: {
@@ -50,7 +51,7 @@ export const changePassword = async (req, res) => {
     try {
         const admin = await Admin.findById(req.admin._id);
 
-        if (admin && (await admin.matchPassword(oldPassword))) {
+        if (admin && admin.password === oldPassword) {
             admin.password = newPassword;
             await admin.save();
             res.json({

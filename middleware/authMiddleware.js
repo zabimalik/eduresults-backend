@@ -13,7 +13,20 @@ export const protect = async (req, res, next) => {
             token = req.headers.authorization.split(' ')[1];
 
             // Verify token
+            if (!process.env.JWT_SECRET) {
+                console.error('❌ protect middleware: JWT_SECRET is missing');
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server configuration error: JWT_SECRET is missing',
+                });
+            }
+
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+            // Wait/Check for database connection (Vercel serverless persistence)
+            if (Admin.db.readyState !== 1) {
+                console.warn('⚠️ protect middleware: Database not connected (readyState: ' + Admin.db.readyState + ')');
+            }
 
             // Get admin from the token
             req.admin = await Admin.findById(decoded.id).select('-password');

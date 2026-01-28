@@ -2,11 +2,14 @@ import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-    if (!process.env.MONGODB_URI) {
-      console.error("FATAL ERROR: MONGO_URI is not defined in environment variables");
+    const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
+
+    if (!uri) {
+      console.error("FATAL ERROR: MONGODB_URI or MONGO_URI is not defined in environment variables");
       process.exit(1);
     }
-    await mongoose.connect(process.env.MONGODB_URI);
+
+    await mongoose.connect(uri);
     console.log("MongoDB connected");
   } catch (error) {
     console.error("Database connection failed", error);

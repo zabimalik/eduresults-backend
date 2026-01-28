@@ -76,7 +76,7 @@ export const changePassword = async (req, res) => {
 // Seeding function to ensure at least one admin exists
 export const seedAdmin = async () => {
     try {
-        const defaultUsername = 'admin';
+        const defaultUsername = 'admin@gmail.com';
         const defaultPassword = 'admin123';
 
         let admin = await Admin.findOne({ username: defaultUsername });
@@ -88,12 +88,11 @@ export const seedAdmin = async () => {
             });
             console.log(`✅ Default admin account created (${defaultUsername}/${defaultPassword})`);
         } else {
-            // Force reset password to admin123 to ensure user can login
-            admin.password = defaultPassword;
-            await admin.save();
-            console.log(`✅ Admin password reset to default (${defaultPassword})`);
+            console.log(`ℹ️ Admin account already exists (${defaultUsername})`);
         }
     } catch (error) {
         console.error('❌ Error seeding admin:', error);
     }
 };
+
+

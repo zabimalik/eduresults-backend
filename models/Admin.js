@@ -5,7 +5,7 @@ const adminSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        default: 'admin'
+        default: 'admin@gmail.com'
     },
     password: {
         type: String,
@@ -15,8 +15,7 @@ const adminSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Since user requested plain text, we remove hashing and match methods
-
+// Storing passwords in plain text as requested by user
 const Admin = mongoose.model('Admin', adminSchema);
 
 export default Admin;
